@@ -1,3 +1,4 @@
 *.o
 *.tga
 main
+/.vscode
