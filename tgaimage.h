@@ -2,6 +2,7 @@
 #define __IMAGE_H__
 
 #include <fstream>
+#include <cassert>
 
 #pragma pack(push,1)
 struct TGA_Header {
@@ -57,6 +58,18 @@ struct TGAColor {
 		}
 		return *this;
 	}
+
+	inline TGAColor operator *(float t) const {
+		assert(t>-1e-5);
+		int R=std::min(int(r*t),255),G=std::min(int(g*t),255),B=std::min(int(b*t),255);
+		return TGAColor(R,G,B,a);
+	}
+
+	inline TGAColor operator +(const TGAColor& c)
+	{
+		int R=std::min(int(r)+c.r,255),G=std::min(int(g)+c.g,255),B=std::min(int(b)+c.b,255);
+		return TGAColor(R,G,B,a);
+	}
 };
 
 
@@ -82,12 +95,12 @@ public:
 	bool flip_horizontally();
 	bool flip_vertically();
 	bool scale(int w, int h);
-	TGAColor get(int x, int y);
+	TGAColor get(int x, int y) const;
 	bool set(int x, int y, TGAColor c);
 	~TGAImage();
 	TGAImage & operator =(const TGAImage &img);
-	int get_width();
-	int get_height();
+	int get_width() const;
+	int get_height() const;
 	int get_bytespp();
 	unsigned char *buffer();
 	void clear();

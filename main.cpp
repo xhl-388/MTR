@@ -1,6 +1,7 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <iostream>
 #include "tgaimage.h"
 #include "model.h"
 #include "geometry.h"
@@ -47,13 +48,13 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color)
 
 Vec3f barycentric(Vec3f *pts, Vec3f P)
 {
-	Vec3f u = Vec3f(pts[2][0] - pts[0][0], pts[1][0] - pts[0][0], pts[0][0] - P[0]) ^ Vec3f(pts[2][1] - pts[0][1], pts[1][1] - pts[0][1], pts[0][1] - P[1]);
+	Vec3f u = Vec3f(pts[1][0] - pts[0][0], pts[2][0] - pts[0][0], pts[0][0] - P[0]) ^ Vec3f(pts[1][1] - pts[0][1], pts[2][1] - pts[0][1], pts[0][1] - P[1]);
 	if (std::abs(u.z) < 1e-2)
 		return Vec3f(-1, 1, 1);
 	return Vec3f(1.f - (u.x + u.y) / u.z, u.x / u.z, u.y / u.z);
 }
 
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color)
+void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec3f* uvs, const TGAImage& texture,float intensity)
 {
 	Vec2f bboxmin(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 	Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -79,8 +80,9 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color)
 				P.z += bc_screen[i] * pts[i].z;
 			if (zbuffer[int(P.x + P.y * width)] < P.z)
 			{
+				Vec3f uv=uvs[0]*bc_screen.x + uvs[1]*bc_screen.y + uvs[2]*bc_screen.z; 
 				zbuffer[int(P.x + P.y * width)] = P.z;
-				image.set(P.x, P.y, color);
+				image.set(P.x, P.y,texture.get(int(uv.x*texture.get_width()),int(uv.y*texture.get_height()))*intensity);
 			}
 		}
 	}
@@ -94,6 +96,14 @@ Vec3f world2screen(Vec3f v)
 int main(int argc, char **argv)
 {
 	TGAImage image(width, height, TGAImage::RGB);
+	TGAImage texture;
+	if(!texture.read_tga_file("./obj/african_head_diffuse.tga"))
+	{
+		std::cerr << "Failed to load the texture! \n" << std::endl;
+		exit(-1);
+	}
+	texture.flip_vertically();
+
 	if (2 == argc)
 	{
 		model = new Model(argv[1]);
@@ -113,17 +123,18 @@ int main(int argc, char **argv)
 		std::vector<int> face = model->face(i);
 		Vec3f screen_coords[3];
 		Vec3f world_coords[3];
+		Vec3f uvs[3];
 		for (int j = 0; j < 3; j++)
 		{
-			Vec3f v = model->vert(face[j]);
-			screen_coords[j] = world2screen(v);
-			world_coords[j] = v;
+			world_coords[j] = model->vert(face[3*j]);
+			screen_coords[j] = world2screen(world_coords[j]);
+			uvs[j] = model->uv(face[3*j+1]);
 		}
 		Vec3f n = ((world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0])).normalize();
 		float intensity = n * light_dir;
 		if (intensity > 0)
 		{
-			triangle(screen_coords, zbuffer, image, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
+			triangle(screen_coords, zbuffer, image, uvs, texture ,intensity);
 		}
 	}
 
