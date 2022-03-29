@@ -54,7 +54,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P)
 	return Vec3f(1.f - (u.x + u.y) / u.z, u.x / u.z, u.y / u.z);
 }
 
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec3f* uvs, const TGAImage& texture,float intensity)
+void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec3f* uvs, float intensity)
 {
 	Vec2f bboxmin(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 	Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
@@ -82,7 +82,7 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec3f* uvs, const TGA
 			{
 				Vec3f uv=uvs[0]*bc_screen.x + uvs[1]*bc_screen.y + uvs[2]*bc_screen.z; 
 				zbuffer[int(P.x + P.y * width)] = P.z;
-				image.set(P.x, P.y,texture.get(int(uv.x*texture.get_width()),int(uv.y*texture.get_height()))*intensity);
+				image.set(P.x, P.y,model->diffuse(Vec2f(uv.x,uv.y))*intensity);
 			}
 		}
 	}
@@ -96,13 +96,6 @@ Vec3f world2screen(Vec3f v)
 int main(int argc, char **argv)
 {
 	TGAImage image(width, height, TGAImage::RGB);
-	TGAImage texture;
-	if(!texture.read_tga_file("./obj/african_head_diffuse.tga"))
-	{
-		std::cerr << "Failed to load the texture! \n" << std::endl;
-		exit(-1);
-	}
-	texture.flip_vertically();
 
 	if (2 == argc)
 	{
@@ -134,7 +127,7 @@ int main(int argc, char **argv)
 		float intensity = n * light_dir;
 		if (intensity > 0)
 		{
-			triangle(screen_coords, zbuffer, image, uvs, texture ,intensity);
+			triangle(screen_coords, zbuffer, image, uvs, intensity);
 		}
 	}
 

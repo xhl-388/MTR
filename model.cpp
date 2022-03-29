@@ -46,7 +46,9 @@ Model::Model(const char *filename) : verts_(),uvs_(),norms_(),faces_() {
             faces_.push_back(f);
         }
     }
-    std::cerr << "# v# " << verts_.size() << "# vh# " <<uvs_.size() << " f# "  << faces_.size() << std::endl;
+    std::cerr << "# v# " << verts_.size() << "# vh# " <<uvs_.size()
+    << "# vn# " << norms_.size()<< " f# "  << faces_.size() << std::endl;
+    load_texture(filename,"_diffuse.tga",diffusemap_);
 }
 
 Model::~Model() {
@@ -76,4 +78,19 @@ Vec3f Model::uv(int i) {
 
 Vec3f Model::norm(int i){
     return norms_[i];
+}
+
+TGAColor Model::diffuse(Vec2f uv) const
+{
+    return diffusemap_.get(diffusemap_.get_width()*uv.x,diffusemap_.get_height()*uv.y);
+}
+
+void Model::load_texture(std::string filename, const char *suffix, TGAImage &img) {
+    std::string texfile(filename);
+    size_t dot = texfile.find_last_of(".");
+    if (dot!=std::string::npos) {
+        texfile = texfile.substr(0,dot) + std::string(suffix);
+        std::cerr << "texture file " << texfile << " loading " << (img.read_tga_file(texfile.c_str()) ? "ok" : "failed") << std::endl;
+        img.flip_vertically();
+    }
 }
