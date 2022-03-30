@@ -21,6 +21,12 @@ public:
 	Mat(const Mat<T1,R,C>& m);
 	Mat(const Mat& m);
 	Mat(Mat&& m);
+    template<int R1>
+    Mat(const Mat<T,R1,C>& m);
+    template<int C1>
+    Mat(const Mat<T,R,C1>& m);
+    template<int R1,int C1>
+    Mat(const Mat<T,R1,C1>& m);
 	~Mat() { 
         if(data)
             delete[] data;
@@ -76,5 +82,6 @@ using Vec2f=Vec<float,2>;
 using Vec3f=Vec<float,3>;
 using Vec2i=Vec<int,2>;
 using Vec3i=Vec<int,3>;
+using Mat4x4f=Mat<float,4,4>;
 
 #endif

@@ -7,12 +7,28 @@
 #include "geometry.h"
 #include "geometry.cpp"
 
-const TGAColor white = TGAColor(255, 255, 255, 255);
-const TGAColor red = TGAColor(255, 0, 0, 255);
-const TGAColor green = TGAColor(0, 255, 0, 255);
 Model *model = NULL;
-const int width = 2000;
-const int height = 2000;
+int* zbuffer;
+
+const int width = 800;
+const int height = 800;
+const int depth=255;
+
+Vec3f light_dir{0,0,-1};
+Vec3f camera{0,0,3};
+
+Mat4x4f viewport(int x,int y,int w,int h)
+{
+	auto m=Mat4x4f::identity();
+	m[0][3] = x+w/2.f;
+    m[1][3] = y+h/2.f;
+    m[2][3] = depth/2.f;
+
+    m[0][0] = w/2.f;
+    m[1][1] = h/2.f;
+    m[2][2] = depth/2.f;
+	return m;
+}
 
 void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color)
 {
@@ -56,7 +72,7 @@ Vec3f barycentric(Vec3f *pts, Vec3f P)
 	return Vec3f{1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z()};
 }
 
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec3f* uvs, float intensity)
+void triangle(Vec3f *pts, TGAImage &image, Vec3f* uvs, float intensity)
 {
 	Vec2f bboxmin{std::numeric_limits<float>::max(), std::numeric_limits<float>::max()};
 	Vec2f bboxmax{-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
@@ -92,10 +108,7 @@ void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, Vec3f* uvs, float int
 
 Vec3f world2screen(Vec3f v)
 {
-	int x=(v.x() + 1.f) * width / 2.f + .5f;
-	int y=(v.y() + 1.f) * height / 2.f + .5f;
-	Vec3f res{ float(x) , float(y), v.z()};
-	return res;
+	return Vec3f{(v.x()+1.)*width/2., (v.y()+1.)*height/2., (v.z()+1.)*depth/2.};
 }
 
 int main(int argc, char **argv)
@@ -111,10 +124,12 @@ int main(int argc, char **argv)
 		model = new Model("obj/african_head.obj");
 	}
 
-	float *zbuffer = new float[width * height];
-	std::fill(zbuffer, zbuffer + width * height, std::numeric_limits<float>::min());
+	zbuffer = new int[width * height];
+	std::fill(zbuffer, zbuffer + width * height, std::numeric_limits<int>::min());
 
-	Vec3f light_dir{0, 0, -1}; // define light_dir
+	// Mat4x4f Projection = Mat4x4f::identity();
+	// Mat4x4f ViewPort   = viewport(width/8, height/8, width*3/4, height*3/4);
+	// Projection[3][2] = -1.f/camera.z();
 
 	for (int i = 0; i < model->nfaces(); i++)
 	{
@@ -125,21 +140,33 @@ int main(int argc, char **argv)
 		for (int j = 0; j < 3; j++)
 		{
 			world_coords[j] = model->vert(face[3*j]);
+			// Vec<float,4> t(world_coords[j]);
+			// t[3][0]=1;
+			// screen_coords[j] =	ViewPort*Projection*t;
 			screen_coords[j] = world2screen(world_coords[j]);
 			uvs[j] = model->uv(face[3*j+1]);
 		}
-		Vec3f tmp=((world_coords[2] - world_coords[0]).crossProduct(world_coords[1] - world_coords[0]));
-		Vec3f n = tmp.normalized();
+		Vec3f n=((world_coords[2] - world_coords[0]).crossProduct(world_coords[1] - world_coords[0])).normalized();
 		float intensity = n.product(light_dir);
-		if (intensity > 0)
+		if (intensity > 1e-3)
 		{
-			triangle(screen_coords, zbuffer, image, uvs, intensity);
+			triangle(screen_coords, image, uvs, intensity);
 		}
 	}
 
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-	image.write_tga_file("output.tga");
-	std::cout<<"GOT"<<std::endl;
+	image.write_tga_file("output1.tga");
+
+	TGAImage zbimage(width, height, TGAImage::GRAYSCALE);
+	for (int i=0; i<width; i++) {
+		for (int j=0; j<height; j++) {
+			zbimage.set(i, j, TGAColor(zbuffer[i+j*width], 1));
+		}
+	}
+	zbimage.flip_vertically(); // i want to have the origin at the left bottom corner of the image
+	zbimage.write_tga_file("zbuffer.tga");
+
 	delete model;
+	delete[] zbuffer;
 	return 0;
 }

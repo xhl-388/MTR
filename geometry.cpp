@@ -33,7 +33,6 @@ Mat<T,R,C1> Mat<T,R,C>::operator*(const Mat<T,C,C1>& m) const
 			T tmp = 0;
 			for (int k = 0; k < C; k++)
 			{
-				std::cout<<data[i*C+k]<<","<<m[k][j]<<std::endl;
 				tmp += (data[i*C+k] * m[k][j]);
 			}
 			res[i][j] = tmp;
@@ -232,6 +231,46 @@ Mat<T,R,C>::Mat(const Mat<T,R,C>& m):Mat()
 	{
 		data[idx]=m.data[idx];
 	}
+}
+
+template<typename T, int R, int C>
+template<int R1>
+Mat<T,R,C>::Mat(const Mat<T,R1,C>& m):Mat()
+{
+    std::fill(data,data+msize,0);
+    int r=std::min(R,R1);
+    for(int i=0;i<r;i++)
+    {
+        for(int j=0;j<C;j++)
+            data[i*C+j]=m[i][j];
+    }
+}
+
+template<typename T, int R, int C>
+template<int C1>
+Mat<T,R,C>::Mat(const Mat<T,R,C1>& m):Mat()
+{
+    std::fill(data,data+msize,0);
+    int c=std::min(C,C1);
+    for(int i=0;i<R;i++)
+    {
+        for(int j=0;j<c;j++)
+            data[i*C+j]=m[i][j];
+    }
+}
+
+template<typename T, int R, int C>
+template<int R1,int C1>
+Mat<T,R,C>::Mat(const Mat<T,R1,C1>& m):Mat()
+{
+    std::fill(data,data+msize,0);
+    int r=std::min(R,R1);
+    int c=std::min(C,C1);
+    for(int i=0;i<r;i++)
+    {
+        for(int j=0;j<c;j++)
+            data[i*C+j]=m[i][j];
+    }
 }
 
 template<typename T, int R, int C>
