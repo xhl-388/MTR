@@ -2,91 +2,79 @@
 #define __GEOMETRY_H__
 
 #include <cmath>
+#include <iostream>
+#include <sstream>
+#include <cassert>
 
-template <class t>
-struct Vec2
+template <typename T,int R, int C>
+class Mat
 {
-    union   // u,v for the screen and x,y for transform
-    {
-        struct
-        {
-            t u, v;
-        };
-        struct
-        {
-            t x, y;
-        };
-        t raw[2];
-    };
-    Vec2() : u(0), v(0) {}
-    Vec2(t _u, t _v) : u(_u), v(_v) {}
-    inline Vec2<t> operator+(const Vec2<t> &V) const { return Vec2<t>(u + V.u, v + V.v); }
-    inline Vec2<t> operator-(const Vec2<t> &V) const { return Vec2<t>(u - V.u, v - V.v); }
-    inline Vec2<t> operator*(float f) const { return Vec2<t>(u * f, v * f); }
-    // for my convenience
-    inline const t& operator[](int index)const { return raw[index]; }
-    inline t& operator[](int index){return raw[index];}
-    template <class>
-    friend std::ostream &operator<<(std::ostream &s, Vec2<t> &v);
-};
-
-template <class t>
-struct Vec3
-{
-    union
-    {
-        struct
-        {
-            t x, y, z;
-        };
-        struct
-        {
-            t ivert, iuv, inorm;
-        };
-        t raw[3];
-    };
-    Vec3() : x(0), y(0), z(0) {}
-    Vec3(t _x, t _y, t _z) : x(_x), y(_y), z(_z) {}
-    // cross product
-    inline Vec3<t> operator^(const Vec3<t> &v) const { return Vec3<t>(y * v.z - z * v.y, z * v.x - x * v.z, x * v.y - y * v.x); }
-    inline Vec3<t> operator+(const Vec3<t> &v) const { return Vec3<t>(x + v.x, y + v.y, z + v.z); }
-    inline Vec3<t> operator-(const Vec3<t> &v) const { return Vec3<t>(x - v.x, y - v.y, z - v.z); }
-    inline Vec3<t> operator*(float f) const { return Vec3<t>(x * f, y * f, z * f); }
-    // [] access
-    inline const t& operator[](int index)const { return raw[index]; }
-    inline t& operator[](int index){return raw[index];}
-    // point product
-    inline t operator*(const Vec3<t> &v) const { return x * v.x + y * v.y + z * v.z; }
-    float norm() const { return std::sqrt(x * x + y * y + z * z); }
-    // normalize the vector which makes it's norm get to l(or normally 1)
-    Vec3<t> &normalize(t l = 1)
-    {
-        *this = (*this) * (l / norm());
-        return *this;
+private:	
+    T* data;
+	enum{row=R,col=C,msize=R*C};
+public:
+    Mat();
+    template <typename T1>
+    Mat(const std::initializer_list<T1>& list);
+	Mat(const std::initializer_list<T>& list);
+	template <typename T1>
+	Mat(const Mat<T1,R,C>& m);
+	Mat(const Mat& m);
+	Mat(Mat&& m);
+	~Mat() { 
+        if(data)
+            delete[] data;
     }
-    template <class>
-    friend std::ostream &operator<<(std::ostream &s, Vec3<t> &v);
+	template <typename T1>
+	Mat& operator=(const Mat<T1,R,C>& m);
+	Mat& operator=(const Mat& m);
+	Mat& operator=(Mat&& m);
+    const T& at(int r,int c=0) const { return data[r*col+c];}
+	T& at(int r,int c=0) { return data[r*col+c];}
+	T* raw() {return data;}
+	void operator<<(const std::string& s);
+	int nrow() const { return row; }
+	int ncol() const { return col; }
+	T product(const Mat& m) const;
+	template <typename t, int r, int c>
+	friend std::ostream& operator<<(std::ostream& os,const Mat<t,r,c>& m);
+	const T* operator[](int r) const;
+	T* operator[](int r);
+	const T& x() const;
+	const T& y() const;
+	const T& z() const;
+	T& x();
+	T& y();
+	T& z();
+
+	static Mat zero();
+	static Mat identity();
+	template <int C1>
+	Mat<T,R,C1> operator*(const Mat<T,C,C1>& m) const;
+    template <typename T1>
+    Mat operator*(const T1& fac) const;
+    Mat operator*(const T& fac) const;
+    template <typename T1>
+    Mat operator+(const Mat<T1,R,C>& m) const;
+    Mat operator+(const Mat& m) const;
+    template <typename T1>
+    Mat operator-(const Mat<T1,R,C>& m) const;
+    Mat operator-(const Mat& m) const;
+    template <typename T1>
+    Mat crossProduct(const Mat<T1,R,C>& m) const;   // now only for vector
+    Mat crossProduct(const Mat& m) const;
+	Mat<T,C,R> transpose() const; 
+    double norm() const;    // now only for vector
+    Mat normalized() const; //now only for vector
+	Mat inverse() const;
 };
 
-//some alises 
+template <typename T, int R>
+using Vec=Mat<T,R,1>;
 
-typedef Vec2<float> Vec2f;
-typedef Vec2<int> Vec2i;
-typedef Vec3<float> Vec3f;
-typedef Vec3<int> Vec3i;
-
-template <class t>
-std::ostream &operator<<(std::ostream &s, Vec2<t> &v)
-{
-    s << "(" << v.x << ", " << v.y << ")\n";
-    return s;
-}
-
-template <class t>
-std::ostream &operator<<(std::ostream &s, Vec3<t> &v)
-{
-    s << "(" << v.x << ", " << v.y << ", " << v.z << ")\n";
-    return s;
-}
+using Vec2f=Vec<float,2>;
+using Vec3f=Vec<float,3>;
+using Vec2i=Vec<int,2>;
+using Vec3i=Vec<int,3>;
 
 #endif

@@ -20,19 +20,19 @@ Model::Model(const char *filename) : verts_(),uvs_(),norms_(),faces_() {
         if (!line.compare(0, 2, "v ")) {
             iss >> trash;
             Vec3f v;
-            for (int i=0;i<3;i++) iss >> v.raw[i];
+            for (int i=0;i<3;i++) iss >> v.at(i);
             verts_.push_back(v);
         }else if(!line.compare(0, 3, "vt "))
         {
             iss >> trash >> trash;
             Vec3f vh;
-            for(int i=0;i<3;i++) iss >> vh.raw[i];
+            for(int i=0;i<3;i++) iss >> vh.at(i);
             uvs_.push_back(vh);
         }else if(!line.compare(0, 3, "vn "))
         {
             iss >> trash >> trash;
             Vec3f vn;
-            for(int i=0;i<3;i++) iss >> vn.raw[i];
+            for(int i=0;i<3;i++) iss >> vn.at(i);
             norms_.push_back(vn);
         }else if (!line.compare(0, 2, "f ")) { // face detected
             std::vector<int> f;
@@ -82,7 +82,7 @@ Vec3f Model::norm(int i){
 
 TGAColor Model::diffuse(Vec2f uv) const
 {
-    return diffusemap_.get(diffusemap_.get_width()*uv.x,diffusemap_.get_height()*uv.y);
+    return diffusemap_.get(diffusemap_.get_width()*uv.x(),diffusemap_.get_height()*uv.y());
 }
 
 void Model::load_texture(std::string filename, const char *suffix, TGAImage &img) {
