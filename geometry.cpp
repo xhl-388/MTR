@@ -234,32 +234,6 @@ Mat<T,R,C>::Mat(const Mat<T,R,C>& m):Mat()
 }
 
 template<typename T, int R, int C>
-template<int R1>
-Mat<T,R,C>::Mat(const Mat<T,R1,C>& m):Mat()
-{
-    std::fill(data,data+msize,0);
-    int r=std::min(R,R1);
-    for(int i=0;i<r;i++)
-    {
-        for(int j=0;j<C;j++)
-            data[i*C+j]=m[i][j];
-    }
-}
-
-template<typename T, int R, int C>
-template<int C1>
-Mat<T,R,C>::Mat(const Mat<T,R,C1>& m):Mat()
-{
-    std::fill(data,data+msize,0);
-    int c=std::min(C,C1);
-    for(int i=0;i<R;i++)
-    {
-        for(int j=0;j<c;j++)
-            data[i*C+j]=m[i][j];
-    }
-}
-
-template<typename T, int R, int C>
 template<int R1,int C1>
 Mat<T,R,C>::Mat(const Mat<T,R1,C1>& m):Mat()
 {
@@ -392,6 +366,11 @@ const T& Mat<T,R,C>::z() const {
 	return data[2];
 }
 template <typename T, int R ,int C>
+const T& Mat<T,R,C>::w() const {
+	static_assert(C==1&&R>3);
+	return data[3];
+}
+template <typename T, int R ,int C>
 T& Mat<T,R,C>::x() {
 	static_assert(C==1);
 	return data[0];
@@ -405,4 +384,9 @@ template <typename T, int R ,int C>
 T& Mat<T,R,C>::z() {
 	static_assert(C==1&&R>2);
 	return data[2];
+}
+template <typename T, int R ,int C>
+T& Mat<T,R,C>::w() {
+	static_assert(C==1&&R>3);
+	return data[3];
 }

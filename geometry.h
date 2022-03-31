@@ -21,10 +21,6 @@ public:
 	Mat(const Mat<T1,R,C>& m);
 	Mat(const Mat& m);
 	Mat(Mat&& m);
-    template<int R1>
-    Mat(const Mat<T,R1,C>& m);
-    template<int C1>
-    Mat(const Mat<T,R,C1>& m);
     template<int R1,int C1>
     Mat(const Mat<T,R1,C1>& m);
 	~Mat() { 
@@ -49,9 +45,11 @@ public:
 	const T& x() const;
 	const T& y() const;
 	const T& z() const;
+	const T& w() const;
 	T& x();
 	T& y();
 	T& z();
+	T& w();
 
 	static Mat zero();
 	static Mat identity();
@@ -80,6 +78,7 @@ using Vec=Mat<T,R,1>;
 
 using Vec2f=Vec<float,2>;
 using Vec3f=Vec<float,3>;
+using Vec4f=Vec<float,4>;
 using Vec2i=Vec<int,2>;
 using Vec3i=Vec<int,3>;
 using Mat4x4f=Mat<float,4,4>;

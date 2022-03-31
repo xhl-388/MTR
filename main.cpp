@@ -10,9 +10,9 @@
 Model *model = NULL;
 int* zbuffer;
 
-const int width = 800;
-const int height = 800;
-const int depth=255;
+constexpr int width = 800;
+constexpr int height = 800;
+constexpr int depth=255;
 
 Vec3f light_dir{0,0,-1};
 Vec3f camera{0,0,3};
@@ -108,7 +108,10 @@ void triangle(Vec3f *pts, TGAImage &image, Vec3f* uvs, float intensity)
 
 Vec3f world2screen(Vec3f v)
 {
-	return Vec3f{(v.x()+1.)*width/2., (v.y()+1.)*height/2., (v.z()+1.)*depth/2.};
+	int x=(v.x() + 1.f) * width / 2.f + .5f;
+	int y=(v.y() + 1.f) * height / 2.f + .5f;
+	Vec3f res{ float(x) , float(y), (v.z()+1.f)/2*depth};
+	return res;;
 }
 
 int main(int argc, char **argv)
@@ -127,9 +130,9 @@ int main(int argc, char **argv)
 	zbuffer = new int[width * height];
 	std::fill(zbuffer, zbuffer + width * height, std::numeric_limits<int>::min());
 
-	// Mat4x4f Projection = Mat4x4f::identity();
-	// Mat4x4f ViewPort   = viewport(width/8, height/8, width*3/4, height*3/4);
-	// Projection[3][2] = -1.f/camera.z();
+	Mat4x4f Projection = Mat4x4f::identity();
+	Mat4x4f ViewPort   = viewport(width/8, height/8, width*3/4, height*3/4);
+	Projection[3][2] = -1.f/camera.z();
 
 	for (int i = 0; i < model->nfaces(); i++)
 	{
@@ -140,15 +143,16 @@ int main(int argc, char **argv)
 		for (int j = 0; j < 3; j++)
 		{
 			world_coords[j] = model->vert(face[3*j]);
-			// Vec<float,4> t(world_coords[j]);
-			// t[3][0]=1;
-			// screen_coords[j] =	ViewPort*Projection*t;
-			screen_coords[j] = world2screen(world_coords[j]);
+			Vec4f t(world_coords[j]);
+			t[3][0]=1;
+			Vec4f v4=ViewPort*Projection*t;
+			screen_coords[j] = 
+				Vec3f{ float(int(v4.x()/v4.w()+0.5f)),float(int(v4.y()/v4.w()+0.5f)),v4.z()/v4.w()};
 			uvs[j] = model->uv(face[3*j+1]);
 		}
 		Vec3f n=((world_coords[2] - world_coords[0]).crossProduct(world_coords[1] - world_coords[0])).normalized();
 		float intensity = n.product(light_dir);
-		if (intensity > 1e-3)
+		if (intensity > 0)
 		{
 			triangle(screen_coords, image, uvs, intensity);
 		}
@@ -160,11 +164,14 @@ int main(int argc, char **argv)
 	TGAImage zbimage(width, height, TGAImage::GRAYSCALE);
 	for (int i=0; i<width; i++) {
 		for (int j=0; j<height; j++) {
-			zbimage.set(i, j, TGAColor(zbuffer[i+j*width], 1));
+			if(zbuffer[i+j*width]!=std::numeric_limits<float>::min())
+				zbimage.set(i, j, TGAColor(zbuffer[i+j*width], 1));
 		}
 	}
 	zbimage.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 	zbimage.write_tga_file("zbuffer.tga");
+
+	std::cout<<"Reach the end!"<<std::endl;
 
 	delete model;
 	delete[] zbuffer;
