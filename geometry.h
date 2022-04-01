@@ -58,6 +58,7 @@ public:
     template <typename T1>
     Mat operator*(const T1& fac) const;
     Mat operator*(const T& fac) const;
+	Mat operator/(const T& fac) const;
     template <typename T1>
     Mat operator+(const Mat<T1,R,C>& m) const;
     Mat operator+(const Mat& m) const;
@@ -150,6 +151,12 @@ Mat<T,R,C> Mat<T,R,C>::operator*(const T& fac) const
     for(int idx=0;idx<msize;idx++)
         res.data[idx]=data[idx]*fac;
     return res;
+}
+
+template<typename T, int R, int C>
+Mat<T,R,C> Mat<T,R,C>::operator/(const T& fac) const
+{
+	return this->operator*(1.f/fac);
 }
 
 template<typename T, int R, int C>
