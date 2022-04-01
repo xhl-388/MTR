@@ -5,7 +5,7 @@
 #include "tgaimage.h"
 #include "model.h"
 #include "geometry.h"
-#include "geometry.cpp"
+#include "trans.h"
 
 Model *model = NULL;
 int* zbuffer;
@@ -15,20 +15,7 @@ constexpr int height = 800;
 constexpr int depth=255;
 
 Vec3f light_dir{0,0,-1};
-Vec3f camera{0,0,3};
-
-Mat4x4f viewport(int x,int y,int w,int h)
-{
-	auto m=Mat4x4f::identity();
-	m[0][3] = x+w/2.f;
-    m[1][3] = y+h/2.f;
-    m[2][3] = depth/2.f;
-
-    m[0][0] = w/2.f;
-    m[1][1] = h/2.f;
-    m[2][2] = depth/2.f;
-	return m;
-}
+Vec3f camera{2,0,1};
 
 void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color)
 {
@@ -65,7 +52,7 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color)
 
 Vec3f barycentric(Vec3f *pts, Vec3f P)
 {
-	Vec3f u = Vec3f{pts[1].x() - pts[0].x(), pts[2].x() - pts[0].x(), pts[0].x() - P.x()}.crossProduct(
+	Vec3f u = Vec3f{pts[1].x() - pts[0].x(), pts[2].x() - pts[0].x(), pts[0].x() - P.x()}.cross_product(
 		Vec3f{pts[1].y() - pts[0].y(), pts[2].y() - pts[0].y(), pts[0].y() - P.y()});
 	if (std::abs(u.z()) < 1e-2)
 		return Vec3f{-1, 1, 1};
@@ -106,14 +93,6 @@ void triangle(Vec3f *pts, TGAImage &image, Vec3f* uvs, float intensity)
 	}
 }
 
-Vec3f world2screen(Vec3f v)
-{
-	int x=(v.x() + 1.f) * width / 2.f + .5f;
-	int y=(v.y() + 1.f) * height / 2.f + .5f;
-	Vec3f res{ float(x) , float(y), (v.z()+1.f)/2*depth};
-	return res;;
-}
-
 int main(int argc, char **argv)
 {
 	TGAImage image(width, height, TGAImage::RGB);
@@ -130,9 +109,9 @@ int main(int argc, char **argv)
 	zbuffer = new int[width * height];
 	std::fill(zbuffer, zbuffer + width * height, std::numeric_limits<int>::min());
 
-	Mat4x4f Projection = Mat4x4f::identity();
-	Mat4x4f ViewPort   = viewport(width/8, height/8, width*3/4, height*3/4);
-	Projection[3][2] = -1.f/camera.z();
+	Mat4x4f ModelView = modelview(camera,Vec3f{0,0,0},Vec3f{0,1,0});
+	Mat4x4f Projection = projection(camera);
+	Mat4x4f ViewPort   = viewport(0, 0, width, height,depth);
 
 	for (int i = 0; i < model->nfaces(); i++)
 	{
@@ -145,12 +124,12 @@ int main(int argc, char **argv)
 			world_coords[j] = model->vert(face[3*j]);
 			Vec4f t(world_coords[j]);
 			t[3][0]=1;
-			Vec4f v4=ViewPort*Projection*t;
+			Vec4f v4=ViewPort*Projection*ModelView*t;
 			screen_coords[j] = 
 				Vec3f{ float(int(v4.x()/v4.w()+0.5f)),float(int(v4.y()/v4.w()+0.5f)),v4.z()/v4.w()};
 			uvs[j] = model->uv(face[3*j+1]);
 		}
-		Vec3f n=((world_coords[2] - world_coords[0]).crossProduct(world_coords[1] - world_coords[0])).normalized();
+		Vec3f n=((world_coords[2] - world_coords[0]).cross_product(world_coords[1] - world_coords[0])).normalized();
 		float intensity = n.product(light_dir);
 		if (intensity > 0)
 		{
