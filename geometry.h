@@ -75,6 +75,11 @@ public:
 	Mat<T,R,C+C1> concat_right(const Mat<T,R,C1>& m) const;
 	template <int R1>
 	Mat<T,R+R1,C> concat_down(const Mat<T,R1,C>& m) const;
+	template <typename T1,int R1,int C1>
+	void assign(const Mat<T1,R1,C1>& m);
+	template <int R1,int C1>
+	void assign(const Mat<T,R1,C1>& m);
+	void fill(int startR,int startC,int endR,int endC,T val);
 };
 
 template <typename T, int R>
@@ -463,6 +468,44 @@ Mat<T,R+R1,C> Mat<T,R,C>::concat_down(const Mat<T,R1,C>& m) const
 			res[i][j]=m[i-R][j];
 	}
 	return res;
+}
+
+template <typename T, int R ,int C>
+template <typename T1,int R1,int C1>
+void Mat<T,R,C>::assign(const Mat<T1,R1,C1>& m)
+{
+	for(int i=0;i<std::min(R,R1);i++)
+	{
+		for(int j=0;j<std::min(C,C1);j++)
+			data[i*C+j]=m[i][j];
+	}
+}
+
+template <typename T, int R ,int C>
+template <int R1,int C1>
+void Mat<T,R,C>::assign(const Mat<T,R1,C1>& m)
+{
+	for(int i=0;i<std::min(R,R1);i++)
+	{
+		for(int j=0;j<std::min(C,C1);j++)
+			data[i*C+j]=static_cast<T>(m[i][j]);
+	}
+}
+
+template <typename T, int R ,int C>
+void Mat<T,R,C>::fill(int startR,int startC,int endR,int endC,T val)
+{
+	assert(startR<=endR);
+	assert(startC<=endC);
+	assert(startR>=0);
+	assert(startC>=0);
+	assert(endR<R);
+	assert(endC<C);
+	for(int i=startR;i<=endR;i++)
+	{
+		for(int j=startC;j<=endC;j++)
+			data[i*C+j]=val;
+	}
 }
 
 template <typename T, int R ,int C>

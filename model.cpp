@@ -68,8 +68,8 @@ std::vector<int> Model::face(int idx) {
     return faces_[idx];
 }
 
-Vec3f Model::vert(int i) {
-    return verts_[i];
+Vec3f Model::vert(int iface,int nthvert) {
+    return verts_[faces_[iface][3*nthvert]];
 }
 
 Vec3f Model::uv(int i) {

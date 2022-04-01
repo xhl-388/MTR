@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 		Vec3f uvs[3];
 		for (int j = 0; j < 3; j++)
 		{
-			world_coords[j] = model->vert(face[3*j]);
+			world_coords[j] = model->vert(i,j);
 			Vec4f t(world_coords[j]);
 			t[3][0]=1;
 			Vec4f v4=ViewPort*Projection*ModelView*t;

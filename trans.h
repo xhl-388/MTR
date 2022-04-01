@@ -8,6 +8,12 @@
 constexpr int width = 800;
 constexpr int height = 800;
 
+struct IShader {
+    virtual ~IShader();
+    virtual Vec3i vertex(int iface, int nthvert) = 0;
+    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
+};
+
 Mat4x4f viewport(int x,int y,int w,int h,int depth);
 
 Mat4x4f projection(const Vec3f& camera);

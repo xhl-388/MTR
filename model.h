@@ -17,7 +17,7 @@ public:
 	~Model();
 	int nverts();
 	int nfaces();
-	Vec3f vert(int i);
+	Vec3f vert(int iface,int nthvert);
 	Vec3f uv(int i);
 	Vec3f norm(int i);
 	TGAColor diffuse(Vec2f uv) const;
