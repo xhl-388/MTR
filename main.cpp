@@ -19,20 +19,21 @@ Vec3f center{0,0,0};
 Vec3f up{0,1,0};
 
 struct GouraudShader : public IShader{
-	Vec3f varying_intensity;
 	Mat<float,2,3> varying_uv; 
+	Mat4x4f uniform_M;   //  Projection*ModelView
+    Mat4x4f uniform_MIT; // (Projection*ModelView).invert_transpose()
 
 	virtual Vec4f vertex(int iface, int nthvert){
 		varying_uv.set_col(nthvert,model->uv(iface,nthvert));
-		varying_intensity[nthvert][0] = std::max(0.f, model->norm(iface,nthvert).product(light_dir));
-		Vec4f gl_vertex(model->vert(iface,nthvert));
-		gl_vertex.w()=1;
+		Vec4f gl_vertex(model->vert(iface,nthvert),1);
 		return Viewport*Projection*ModelView*gl_vertex;
 	}
 
 	virtual bool fragment(Vec3f bar, TGAColor& color){
-		float intensity = varying_intensity.product(bar);
 		Vec2f uv=varying_uv*bar;
+		Vec3f n = Vec3f(uniform_MIT*Vec4f(model->normal(uv),1)).normalized();
+		Vec3f l = Vec3f(uniform_M*Vec4f(light_dir,1)).normalized();
+		float intensity = std::max(0.f,n.product(l));
 		color = model->diffuse(uv)*intensity;
 		return false;
 	}
@@ -54,6 +55,8 @@ int main(int argc, char **argv)
 	Viewport   = viewport(0, 0, width, height,depth);
 
 	GouraudShader shader;
+	shader.uniform_M=Projection*ModelView;
+	shader.uniform_MIT=shader.uniform_M.inverse().transpose();
 	for (int i = 0; i < model->nfaces(); i++)
 	{
 		Vec4f screen_coords[3];

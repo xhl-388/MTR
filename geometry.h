@@ -13,7 +13,7 @@ private:
     T* data;
 	enum{row=R,col=C,msize=R*C};
 public:
-    Mat();
+    Mat(T defVal=0);
     template <typename T1>
     Mat(const std::initializer_list<T1>& list);
 	Mat(const std::initializer_list<T>& list);
@@ -22,7 +22,7 @@ public:
 	Mat(const Mat& m);
 	Mat(Mat&& m);
     template<int R1,int C1>
-    Mat(const Mat<T,R1,C1>& m);
+    Mat(const Mat<T,R1,C1>& m, T defVal=0);
 	~Mat() { 
         if(data)
             delete[] data;
@@ -282,10 +282,11 @@ Mat<T,R,C> Mat<T,R,C>::inverse() const
 }
 
 template<typename T, int R, int C>
-Mat<T,R,C>::Mat()
+Mat<T,R,C>::Mat(T defVal)
 {
 	static_assert(R>0&&C>0);
 	data=new T[R*C];
+	std::fill(data,data+msize,defVal);
 }
 
 template<typename T, int R, int C>
@@ -336,9 +337,8 @@ Mat<T,R,C>::Mat(const Mat<T,R,C>& m):Mat()
 
 template<typename T, int R, int C>
 template<int R1,int C1>
-Mat<T,R,C>::Mat(const Mat<T,R1,C1>& m):Mat()
+Mat<T,R,C>::Mat(const Mat<T,R1,C1>& m, T defVal):Mat(defVal)
 {
-    std::fill(data,data+msize,0);
     int r=std::min(R,R1);
     int c=std::min(C,C1);
     for(int i=0;i<r;i++)
