@@ -20,30 +20,22 @@ Vec3f up{0,1,0};
 
 struct GouraudShader : public IShader{
 	Vec3f varying_intensity;
+	Mat<float,2,3> varying_uv; 
 
 	virtual Vec4f vertex(int iface, int nthvert){
+		varying_uv.set_col(nthvert,model->uv(iface,nthvert));
 		varying_intensity[nthvert][0] = std::max(0.f, model->norm(iface,nthvert).product(light_dir));
 		Vec4f gl_vertex(model->vert(iface,nthvert));
 		gl_vertex.w()=1;
 		return Viewport*Projection*ModelView*gl_vertex;
 	}
 
-	// virtual bool fragment(Vec3f bar, TGAColor& color){
-	// 	float intensity = varying_intensity.product(bar);
-	// 	color = TGAColor(255,255,255)*intensity;
-	// 	return false;
-	// }
-	virtual bool fragment(Vec3f bar, TGAColor &color) {
-	float intensity = varying_intensity.product(bar);
-	if (intensity>.85) intensity = 1;
-	else if (intensity>.60) intensity = .80;
-	else if (intensity>.45) intensity = .60;
-	else if (intensity>.30) intensity = .45;
-	else if (intensity>.15) intensity = .30;
-	else intensity = 0;
-	color = TGAColor(255, 155, 0)*intensity;
-	return false;
-    }
+	virtual bool fragment(Vec3f bar, TGAColor& color){
+		float intensity = varying_intensity.product(bar);
+		Vec2f uv=varying_uv*bar;
+		color = model->diffuse(uv)*intensity;
+		return false;
+	}
 };
 
 int main(int argc, char **argv)

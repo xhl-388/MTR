@@ -81,6 +81,8 @@ public:
 	template <int R1,int C1>
 	void assign(const Mat<T,R1,C1>& m);
 	void fill(int startR,int startC,int endR,int endC,T val);
+	void set_row(int idx,const Mat<T,1,C>& m);
+	void set_col(int idx,const Mat<T,R,1>& m);
 };
 
 template <typename T, int R>
@@ -513,6 +515,20 @@ void Mat<T,R,C>::fill(int startR,int startC,int endR,int endC,T val)
 		for(int j=startC;j<=endC;j++)
 			data[i*C+j]=val;
 	}
+}
+
+template <typename T, int R ,int C>
+void Mat<T,R,C>::set_row(int idx,const Mat<T,1,C>& m)
+{
+	for(int j=0;j<C;j++)
+		data[idx*C+j]=m[0][j];
+}
+
+template <typename T, int R ,int C>
+void Mat<T,R,C>::set_col(int idx,const Mat<T,R,1>& m)
+{
+	for(int i=0;i<R;i++)
+		data[i*C+idx]=m[i][0];
 }
 
 template <typename T, int R ,int C>
