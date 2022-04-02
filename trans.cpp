@@ -1,5 +1,11 @@
 #include "trans.h"
 
+Mat4x4f ModelView;
+Mat4x4f Viewport;
+Mat4x4f Projection;
+
+IShader::~IShader() {}
+
 Mat4x4f viewport(int x,int y,int w,int h,int depth)
 {
 	auto m=Mat4x4f::identity();
@@ -77,7 +83,7 @@ Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec3f P)
 	return Vec3f{1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z()};
 }
 
-void triangle(Vec4f *pts, TGAImage &image, Vec3f* uvs, float intensity ,TGAImage &zbuffer)
+void triangle(Vec4f *pts, TGAImage &image, IShader& shader, TGAImage &zbuffer)
 {
     Vec2f bboxmin{ std::numeric_limits<float>::max(),  std::numeric_limits<float>::max()};
     Vec2f bboxmax{-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
@@ -88,6 +94,7 @@ void triangle(Vec4f *pts, TGAImage &image, Vec3f* uvs, float intensity ,TGAImage
         }
     }
 	Vec2i P;
+	TGAColor color(255,255,255);
 	for (P.x() = bboxmin.x(); P.x() <= bboxmax.x(); P.x()++)
 	{
 		for (P.y() = bboxmin.y(); P.y() <= bboxmax.y(); P.y()++)
@@ -98,13 +105,14 @@ void triangle(Vec4f *pts, TGAImage &image, Vec3f* uvs, float intensity ,TGAImage
 			float w=Vec3f{pts[0].w(),pts[1].w(),pts[2].w()}.product(bc_screen);
 			int frag_depth=std::max(0,std::min(255,int(z/w)));
 			
-			if (bc_screen.x() < 0 || bc_screen.y() < 0 || bc_screen.z() < 0)
+			if (bc_screen.x() < 0 || bc_screen.y() < 0 || bc_screen.z() < 0 ||
+				zbuffer.get(P.x(),P.y())[0]> frag_depth)
 				continue;
-			if (zbuffer.get(P.x(),P.y())[0]< frag_depth)
+			bool discard = shader.fragment(bc_screen,color);
+			if (!discard)
 			{
-				Vec3f uv=uvs[0]*bc_screen.x() + uvs[1]*bc_screen.y() + uvs[2]*bc_screen.z(); 
                 zbuffer.set(P.x(),P.y(),TGAColor(frag_depth));
-				image.set(P.x(), P.y(),TGAColor(255,255,255,255)*intensity);
+				image.set(P.x(), P.y(),color);
 			}
 		}
 	}

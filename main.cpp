@@ -10,11 +10,30 @@
 Model *model = NULL;
 
 constexpr int depth=255;
+constexpr int width = 800;
+constexpr int height = 800;
 
-Vec3f light_dir{0,0,-1};
-Vec3f camera{1,0,1};
+Vec3f light_dir = Vec3f{1,1,1}.normalized();
+Vec3f camera{0,-1,3};
 Vec3f center{0,0,0};
 Vec3f up{0,1,0};
+
+struct GouraudShader : public IShader{
+	Vec3f varying_intensity;
+
+	virtual Vec4f vertex(int iface, int nthvert){
+		varying_intensity[nthvert][0] = std::max(0.f, model->norm(iface,nthvert).product(light_dir));
+		Vec4f gl_vertex(model->vert(iface,nthvert));
+		gl_vertex.w()=1;
+		return Viewport*Projection*ModelView*gl_vertex;
+	}
+
+	virtual bool fragment(Vec3f bar, TGAColor& color){
+		float intensity = varying_intensity.product(bar);
+		color = TGAColor(255,255,255)*intensity;
+		return false;
+	}
+};
 
 int main(int argc, char **argv)
 {
@@ -27,30 +46,18 @@ int main(int argc, char **argv)
 		model = new Model("obj/african_head.obj");
 	}
 
-	Mat4x4f ModelView = lookat(camera,center,up);
-	Mat4x4f Projection = projection(-1.f/(camera-center).norm());
-	Mat4x4f ViewPort   = viewport(0, 0, width, height,depth);
+	ModelView = lookat(camera,center,up);
+	Projection = projection(-1.f/(camera-center).norm());
+	Viewport   = viewport(0, 0, width, height,depth);
 
+	GouraudShader shader;
 	for (int i = 0; i < model->nfaces(); i++)
 	{
-		std::vector<int> face = model->face(i);
 		Vec4f screen_coords[3];
-		Vec3f world_coords[3];
-		Vec3f uvs[3];
-		for (int j = 0; j < 3; j++)
-		{
-			world_coords[j] = model->vert(i,j);
-			Vec4f t(world_coords[j]);
-			t[3][0]=1;
-			screen_coords[j] =ViewPort*Projection*ModelView*t;
-			uvs[j] = model->uv(face[3*j+1]);
+		for (int j = 0; j < 3; j++){
+			screen_coords[j] = shader.vertex(i,j);
 		}
-		Vec3f n=((world_coords[2] - world_coords[0]).cross_product(world_coords[1] - world_coords[0])).normalized();
-		float intensity = n.product(light_dir);
-		if (intensity > 0)
-		{
-			triangle(screen_coords, image, uvs, intensity, zbuffer);
-		}
+		triangle(screen_coords, image, shader, zbuffer);
 	}
 
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image

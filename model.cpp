@@ -72,12 +72,12 @@ Vec3f Model::vert(int iface,int nthvert) {
     return verts_[faces_[iface][3*nthvert]];
 }
 
-Vec3f Model::uv(int i) {
-    return uvs_[i];
+Vec2f Model::uv(int iface, int nthvert) {
+    return uvs_[faces_[iface][3*nthvert+1]];
 }
 
-Vec3f Model::norm(int i){
-    return norms_[i];
+Vec3f Model::norm(int iface, int nthvert){
+    return norms_[faces_[iface][3*nthvert+2]].normalized();
 }
 
 TGAColor Model::diffuse(Vec2f uv) const

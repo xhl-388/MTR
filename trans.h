@@ -5,12 +5,13 @@
 #include "tgaimage.h"
 #include <limits>
 
-constexpr int width = 800;
-constexpr int height = 800;
+extern Mat4x4f Viewport;
+extern Mat4x4f Projection;
+extern Mat4x4f ModelView;
 
 struct IShader {
     virtual ~IShader();
-    virtual Vec3i vertex(int iface, int nthvert) = 0;
+    virtual Vec4f vertex(int iface, int nthvert) = 0;
     virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
 };
 
@@ -24,6 +25,6 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color);
 
 Vec3f barycentric(Vec3f *pts, Vec3f P);
 
-void triangle(Vec4f *pts, TGAImage &image, Vec3f* uvs, float intensity, TGAImage &zbuffer);
+void triangle(Vec4f *pts, TGAImage &image, IShader& shader, TGAImage &zbuffer);
 
 #endif
