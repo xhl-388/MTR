@@ -14,7 +14,7 @@ constexpr int width = 800;
 constexpr int height = 800;
 
 Vec3f light_dir = Vec3f{1,1,1}.normalized();
-Vec3f camera{0,-1,3};
+Vec3f camera{1,1,3};
 Vec3f center{0,0,0};
 Vec3f up{0,1,0};
 
@@ -28,11 +28,22 @@ struct GouraudShader : public IShader{
 		return Viewport*Projection*ModelView*gl_vertex;
 	}
 
-	virtual bool fragment(Vec3f bar, TGAColor& color){
-		float intensity = varying_intensity.product(bar);
-		color = TGAColor(255,255,255)*intensity;
-		return false;
-	}
+	// virtual bool fragment(Vec3f bar, TGAColor& color){
+	// 	float intensity = varying_intensity.product(bar);
+	// 	color = TGAColor(255,255,255)*intensity;
+	// 	return false;
+	// }
+	virtual bool fragment(Vec3f bar, TGAColor &color) {
+	float intensity = varying_intensity.product(bar);
+	if (intensity>.85) intensity = 1;
+	else if (intensity>.60) intensity = .80;
+	else if (intensity>.45) intensity = .60;
+	else if (intensity>.30) intensity = .45;
+	else if (intensity>.15) intensity = .30;
+	else intensity = 0;
+	color = TGAColor(255, 155, 0)*intensity;
+	return false;
+    }
 };
 
 int main(int argc, char **argv)
