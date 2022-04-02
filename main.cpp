@@ -33,9 +33,13 @@ struct GouraudShader : public IShader{
 		Vec2f uv=varying_uv*bar;
 		Vec3f n = Vec3f(uniform_MIT*Vec4f(model->normal(uv),1)).normalized();
 		Vec3f l = Vec3f(uniform_M*Vec4f(light_dir,1)).normalized();
-		float intensity = std::max(0.f,n.product(l));
-		color = model->diffuse(uv)*intensity;
-		return false;
+		Vec3f r = (n*(n.product(l)*2.f)-l).normalized();
+		float spec = pow(std::max(0.f,r.z()), model->specular(uv));
+		float diffuse = std::max(0.f,n.product(l));
+		TGAColor c = model->diffuse(uv);
+        color = c;
+        for (int i=0; i<3; i++) color[i] = std::min<float>(5 + c[i]*(diffuse + .6*spec), 255);
+        return false;
 	}
 };
 
@@ -68,7 +72,7 @@ int main(int argc, char **argv)
 
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 	zbuffer.flip_vertically();
-	image.write_tga_file("output1.tga");
+	image.write_tga_file("output.tga");
 	zbuffer.write_tga_file("zbuffer.tga");
 
 	std::cout<<"Reach the end!"<<std::endl;
