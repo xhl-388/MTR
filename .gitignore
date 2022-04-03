@@ -2,3 +2,5 @@
 /*.tga
 main
 /.vscode
+/build/*
+!/build/Makefile
