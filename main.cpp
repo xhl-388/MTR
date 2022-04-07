@@ -15,8 +15,8 @@ constexpr int depth=255;
 constexpr int width = 1000;
 constexpr int height = 1000;
 
-Vec3f light_pos = Vec3f{0,1,1};
-Vec3f light_dir = Vec3f{0,1,1}.normalized();
+Vec3f light_pos = Vec3f{-1,1,1};
+Vec3f light_dir = Vec3f{-1,1,1}.normalized();
 Vec3f camera{1,1,4};
 Vec3f center{0,0,0};
 Vec3f up{0,1,0};
@@ -96,8 +96,10 @@ struct DepthShader : public IShader {
 
 int main(int argc, char **argv)
 {
+	// prepare data
 	TGAImage image(width, height, TGAImage::RGB);
 	TGAImage depthImg(width,height,TGAImage::GRAYSCALE);
+	
 	zbuffer = new float[width*height];
 	std::fill(zbuffer,zbuffer+width*height,-std::numeric_limits<float>::max());
 	shadowbuffer = new float[width*height];
@@ -109,44 +111,48 @@ int main(int argc, char **argv)
 		model = new Model("../obj/diablo3_pose.obj");
 	}
 
-	ModelView = lookat(light_pos,center,up);
-	Projection = projection(0);
-	Viewport = viewport(0,0,width,height,depth);
-
-	DepthShader depthShader;
-
-	for (int i = 0; i < model->nfaces(); i++)
+	// first pass : shadow pass
 	{
-		for (int j = 0; j < 3; j++){
-			depthShader.vertex(i,j);
+		ModelView = lookat(light_pos,center,up);
+		Projection = projection(0);
+		Viewport = viewport(0,0,width,height,depth);
+
+		DepthShader depthShader;
+
+		for (int i = 0; i < model->nfaces(); i++)
+		{
+			for (int j = 0; j < 3; j++){
+				depthShader.vertex(i,j);
+			}
+			triangle(depthShader.varying_tri, depthImg, depthShader, shadowbuffer);
 		}
-		triangle(depthShader.varying_tri, depthImg, depthShader, shadowbuffer);
+		depthImg.flip_vertically(); // i want to have the origin at the left bottom corner of the image
+		depthImg.write_tga_file("depth.tga");
 	}
-	depthImg.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-	depthImg.write_tga_file("depth.tga");
 
 	Mat4x4f M = Viewport*Projection*ModelView;
 
-
-	ModelView = lookat(camera,center,up);
-	Projection = projection(-1.f/(camera-center).norm());
-	Viewport   = viewport(0, 0, width, height,depth);
-
-	GouraudShader shader;
-	shader.uniform_M=Projection*ModelView;
-	shader.uniform_MIT=shader.uniform_M.inverse().transpose();
-	shader.uniform_Mshadow = M*(shader.uniform_M.inverse());
-	for (int i = 0; i < model->nfaces(); i++)
+	// second pass : render pass
 	{
-		for (int j = 0; j < 3; j++){
-			shader.vertex(i,j);
+		ModelView = lookat(camera,center,up);
+		Projection = projection(-1.f/(camera-center).norm());
+		Viewport   = viewport(0, 0, width, height,depth);
+
+		GouraudShader shader;
+		shader.uniform_M=Projection*ModelView;
+		shader.uniform_MIT=shader.uniform_M.inverse().transpose();
+		shader.uniform_Mshadow = M*(shader.uniform_M.inverse());
+		for (int i = 0; i < model->nfaces(); i++)
+		{
+			for (int j = 0; j < 3; j++){
+				shader.vertex(i,j);
+			}
+			triangle(shader.varying_tri, image, shader, zbuffer);
 		}
-		triangle(shader.varying_tri, image, shader, zbuffer);
+
+		image.flip_vertically();
+		image.write_tga_file("output.tga");
 	}
-
-	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-	image.write_tga_file("output.tga");
-
 	std::cout<<"Reach the end!"<<std::endl;
 
 	delete model;
