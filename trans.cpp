@@ -34,11 +34,9 @@ Mat4x4f lookat(const Vec3f& camera,const Vec3f& center,const Vec3f& up)
 
     Mat4x4f res=Mat4x4f::identity();
 	res.assign(x.concat_right(y).concat_right(z).transpose());
-    for(int i=0;i<3;i++)
-    {
-        res[i][3]=-center[i][0];
-    }
-   	return res;
+	Mat4x4f Tr=Mat4x4f::identity();
+	Tr.set_col(3,Vec4f(Vec3f::zero()-center,1));
+   	return res*Tr;
 }
 
 void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color)
