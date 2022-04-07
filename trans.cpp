@@ -109,7 +109,7 @@ void triangle(Mat<float,4,3>& clipc, TGAImage &image, IShader& shader, float* zb
 			Vec3f bc_clip = Vec3f{bc_screen.x()/pts[0][3], bc_screen.y()/pts[1][3], 
 				bc_screen.z()/pts[2][3]};
 			bc_clip = bc_clip/(bc_clip.x()+bc_clip.y()+bc_clip.z());
-			float frag_depth=clipc.get_row(2).transpose().product(bc_clip);
+			float frag_depth=Vec3f{pts[0][2]/pts[0][3],pts[1][2]/pts[1][3],pts[2][2]/pts[2][3]}.product(bc_clip);
 			
 			if (bc_screen.x() < 0 || bc_screen.y() < 0 || bc_screen.z() < 0 ||
 				zbuffer[P.x()+P.y()*image.get_width()]> frag_depth)
