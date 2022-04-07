@@ -94,11 +94,43 @@ struct DepthShader : public IShader {
     }
 };
 
+struct ZShader : public IShader {
+    Mat<float,4,3> varying_tri;
+
+    virtual Vec4f vertex(int iface, int nthvert) {
+        Vec4f gl_Vertex = Projection*ModelView*Vec4f(model->vert(iface, nthvert),1);
+        varying_tri.set_col(nthvert, gl_Vertex);
+        return gl_Vertex;
+    }
+
+    virtual bool fragment( Vec3f bar, TGAColor &color) {
+        color = TGAColor(0, 0, 0);
+        return false;
+    }
+};
+
+float max_elevation_angle(float *buffer, Vec2f p, Vec2f dir) {
+    float maxangle = 0;
+    for (float t=0.; t<10.; t+=1.) {
+        Vec2f cur = p + dir*t;
+        if (cur.x()>=width || cur.y()>=height || cur.x()<0 || cur.y()<0
+			||buffer[int(cur.x())+int(cur.y())*width]==-std::numeric_limits<float>::max()) 
+			return maxangle;
+        float distance = (p-cur).norm();
+        if (distance < 1.f) continue;
+        float elevation = (buffer[int(cur.x())+int(cur.y())*width]-buffer[int(p.x())+int(p.y())*width])/depth;
+		// std::cout<<elevation<<std::endl;
+        maxangle = std::max(maxangle, atanf(elevation/distance));
+    }
+    return maxangle;
+}
+
 int main(int argc, char **argv)
 {
 	// prepare data
 	TGAImage image(width, height, TGAImage::RGB);
 	TGAImage depthImg(width,height,TGAImage::GRAYSCALE);
+	TGAImage frame(width, height, TGAImage::RGB);
 	
 	zbuffer = new float[width*height];
 	std::fill(zbuffer,zbuffer+width*height,-std::numeric_limits<float>::max());
@@ -128,6 +160,38 @@ int main(int argc, char **argv)
 		}
 		depthImg.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 		depthImg.write_tga_file("depth.tga");
+	}
+
+	{
+		ModelView = lookat(camera,center,up);
+		Projection = projection(-1.f/(camera-center).norm());
+		Viewport   = viewport(0, 0, width, height,depth);
+
+		ZShader zshader;
+		for (int i=0; i<model->nfaces(); i++) {
+			for (int j=0; j<3; j++) {
+				zshader.vertex(i, j);
+			}
+			triangle(zshader.varying_tri, frame, zshader, zbuffer);
+		}
+
+		for (int x=0; x<width; x++) {
+			for (int y=0; y<height; y++) {
+				if (zbuffer[x+y*width] < -1e5) continue;
+				float total = 0;
+				for (float a=0; a<M_PI*2-1e-4; a += M_PI/4) {
+					total += M_PI/2 - max_elevation_angle(zbuffer, Vec2f{x, y}, 
+						Vec2f{std::cos(a), std::sin(a)});
+				}
+				total /= (M_PI/2)*8;
+				total = std::pow(total, 100.f);
+				int val = std::min(255,int(total*255));
+				frame.set(x, y, TGAColor(val,val,val));
+			}
+		}
+		frame.flip_vertically();
+		frame.write_tga_file("framebuffer.tga");
+		std::fill(zbuffer,zbuffer+width*height,-std::numeric_limits<float>::max());
 	}
 
 	Mat4x4f M = Viewport*Projection*ModelView;
