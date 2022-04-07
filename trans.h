@@ -23,8 +23,8 @@ Mat4x4f lookat(const Vec3f& camera,const Vec3f& center,const Vec3f& up);
 
 void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color);
 
-Vec3f barycentric(Vec3f *pts, Vec3f P);
+Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P);
 
-void triangle(Vec4f *pts, TGAImage &image, IShader& shader, TGAImage &zbuffer);
+void triangle(Mat<float,4,3>& clipc, TGAImage &image, IShader& shader, float* zbuffer);
 
 #endif

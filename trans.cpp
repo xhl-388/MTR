@@ -74,7 +74,7 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color)
 	}
 }
 
-Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec3f P)
+Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec2f P)
 {
 	Vec3f u = Vec3f{B.x() - A.x(), C.x() - A.x(), A.x() - P.x()}.cross_product(
 		Vec3f{B.y() - A.y(), C.y() - A.y(), A.y() - P.y()});
@@ -83,14 +83,19 @@ Vec3f barycentric(Vec2f A, Vec2f B, Vec2f C, Vec3f P)
 	return Vec3f{1.f - (u.x() + u.y()) / u.z(), u.x() / u.z(), u.y() / u.z()};
 }
 
-void triangle(Vec4f *pts, TGAImage &image, IShader& shader, TGAImage &zbuffer)
+void triangle(Mat<float,4,3>& clipc, TGAImage &image, IShader& shader, float* zbuffer)
 {
+	Mat<float,3,4> pts=(Viewport*clipc).transpose();
+	Mat<float,3,2> pts2;
+	for(int i=0;i<3;i++)
+		pts2.set_row(i,Mat<float,1,2>(pts.get_row(i)/pts[i][3]));
     Vec2f bboxmin{ std::numeric_limits<float>::max(),  std::numeric_limits<float>::max()};
     Vec2f bboxmax{-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max()};
+	Vec2f clamp{image.get_width()-1, image.get_height()-1};
     for (int i=0; i<3; i++) {
         for (int j=0; j<2; j++) {
-            bboxmin[j][0] = std::min(bboxmin[j][0], pts[i][j][0]/pts[i][3][0]);
-            bboxmax[j][0] = std::max(bboxmax[j][0], pts[i][j][0]/pts[i][3][0]);
+            bboxmin[j][0] = std::max(0.f,std::min(bboxmin[j][0], pts2[i][j]));
+            bboxmax[j][0] = std::min(clamp[j][0], std::max(bboxmax[j][0], pts2[i][j]));
         }
     }
 	Vec2i P;
@@ -99,20 +104,21 @@ void triangle(Vec4f *pts, TGAImage &image, IShader& shader, TGAImage &zbuffer)
 	{
 		for (P.y() = bboxmin.y(); P.y() <= bboxmax.y(); P.y()++)
 		{
-			Vec3f bc_screen = barycentric(Vec2f(pts[0]/pts[0][3][0]),Vec2f(pts[1]/pts[1][3][0]),
-				Vec2f(pts[2]/pts[2][3][0]),Vec2f(P));
-			float z=Vec3f{pts[0].z(),pts[1].z(),pts[2].z()}.product(bc_screen);
-			float w=Vec3f{pts[0].w(),pts[1].w(),pts[2].w()}.product(bc_screen);
-			int frag_depth=std::max(0,std::min(255,int(z/w)));
+			Vec3f bc_screen = barycentric(pts2.get_row(0).transpose(), pts2.get_row(1).transpose(), 
+				pts2.get_row(2).transpose(), Vec2f(P));
+			Vec3f bc_clip = Vec3f{bc_screen.x()/pts[0][3], bc_screen.y()/pts[1][3], 
+				bc_screen.z()/pts[2][3]};
+			bc_clip = bc_clip/(bc_clip.x()+bc_clip.y()+bc_clip.z());
+			float frag_depth=clipc.get_row(2).transpose().product(bc_clip);
 			
 			if (bc_screen.x() < 0 || bc_screen.y() < 0 || bc_screen.z() < 0 ||
-				zbuffer.get(P.x(),P.y())[0]> frag_depth)
+				zbuffer[P.x()+P.y()*image.get_width()]> frag_depth)
 				continue;
-			bool discard = shader.fragment(bc_screen,color);
+			bool discard = shader.fragment(bc_clip,color);
 			if (!discard)
 			{
-                zbuffer.set(P.x(),P.y(),TGAColor(frag_depth));
-				image.set(P.x(), P.y(),color);
+                zbuffer[P.x()+P.y()*image.get_width()] = frag_depth;
+				image.set(P.x(), P.y(), color);
 			}
 		}
 	}

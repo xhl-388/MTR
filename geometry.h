@@ -22,7 +22,7 @@ public:
 	Mat(const Mat& m);
 	Mat(Mat&& m);
     template<int R1,int C1>
-    Mat(const Mat<T,R1,C1>& m, T defVal=0);
+    explicit Mat(const Mat<T,R1,C1>& m, T defVal=0);
 	~Mat() { 
         if(data)
             delete[] data;
@@ -83,6 +83,8 @@ public:
 	void fill(int startR,int startC,int endR,int endC,T val);
 	void set_row(int idx,const Mat<T,1,C>& m);
 	void set_col(int idx,const Mat<T,R,1>& m);
+	Mat<T,1,C> get_row(int idx) const;
+	Mat<T,R,1> get_col(int idx) const;
 };
 
 template <typename T, int R>
@@ -529,6 +531,24 @@ void Mat<T,R,C>::set_col(int idx,const Mat<T,R,1>& m)
 {
 	for(int i=0;i<R;i++)
 		data[i*C+idx]=m[i][0];
+}
+
+template <typename T, int R ,int C>
+Mat<T,1,C> Mat<T,R,C>::get_row(int idx) const
+{
+	Mat<T,1,C> res;
+	for(int j=0;j<C;j++)
+		res[0][j]=data[idx*C+j];
+	return res;
+}
+
+template <typename T, int R ,int C>
+Mat<T,R,1> Mat<T,R,C>::get_col(int idx) const
+{
+	Mat<T,R,1> res;
+	for(int i=0;i<R;i++)
+		res[i][0]=data[i*C+idx];
+	return res;
 }
 
 template <typename T, int R ,int C>

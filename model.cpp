@@ -27,7 +27,7 @@ Model::Model(const char *filename) : verts_(),uvs_(),norms_(),faces_() {
             iss >> trash >> trash;
             Vec3f vh;
             for(int i=0;i<3;i++) iss >> vh.at(i);
-            uvs_.push_back(vh);
+            uvs_.push_back(Vec2f(vh));
         }else if(!line.compare(0, 3, "vn "))
         {
             iss >> trash >> trash;
@@ -49,7 +49,7 @@ Model::Model(const char *filename) : verts_(),uvs_(),norms_(),faces_() {
     std::cerr << "# v# " << verts_.size() << "# vh# " <<uvs_.size()
     << "# vn# " << norms_.size()<< " f# "  << faces_.size() << std::endl;
     load_texture(filename,"_diffuse.tga",diffusemap_);
-    load_texture(filename, "_nm.tga",   normalmap_);
+    load_texture(filename, "_nm_tangent.tga",   normalmap_);
     load_texture(filename, "_spec.tga" ,specularmap_);
 }
 
