@@ -176,7 +176,9 @@ int main(int argc, char **argv)
 			}
 			triangle(zshader.varying_tri, frame, zshader, zbuffer);
 		}
-
+		
+		omp_set_num_threads(20);
+		#pragma omp parallel for
 		for (int x=0; x<width; x++) {
 			for (int y=0; y<height; y++) {
 				if (zbuffer[x+y*width] < -1e5) continue;

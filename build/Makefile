@@ -1,5 +1,5 @@
 SYSCONF_LINK = g++
-CPPFLAGS     = -std=c++17 -Wall -O2
+CPPFLAGS     = -std=c++17 -Wall -O2 -fopenmp
 CFLAGS		 =
 LDFLAGS      =
 LIBS         = -lm

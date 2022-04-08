@@ -4,6 +4,7 @@
 #include "geometry.h"
 #include "tgaimage.h"
 #include <limits>
+#include <omp.h>
 
 extern Mat4x4f Viewport;
 extern Mat4x4f Projection;

@@ -96,27 +96,27 @@ void triangle(Mat<float,4,3>& clipc, TGAImage &image, IShader& shader, float* zb
             bboxmax[j][0] = std::min(clamp[j][0], std::max(bboxmax[j][0], pts2[i][j]));
         }
     }
-	Vec2i P;
+
 	TGAColor color(255,255,255);
-	for (P.x() = bboxmin.x(); P.x() <= bboxmax.x(); P.x()++)
+	for (int Px = bboxmin.x(); Px <= bboxmax.x(); Px++)
 	{
-		for (P.y() = bboxmin.y(); P.y() <= bboxmax.y(); P.y()++)
+		for (int Py = bboxmin.y(); Py <= bboxmax.y(); Py++)
 		{
 			Vec3f bc_screen = barycentric(pts2.get_row(0).transpose(), pts2.get_row(1).transpose(), 
-				pts2.get_row(2).transpose(), Vec2f(P));
+				pts2.get_row(2).transpose(), Vec2f{Px,Py});
 			Vec3f bc_clip = Vec3f{bc_screen.x()/pts[0][3], bc_screen.y()/pts[1][3], 
 				bc_screen.z()/pts[2][3]};
 			bc_clip = bc_clip/(bc_clip.x()+bc_clip.y()+bc_clip.z());
 			float frag_depth=Vec3f{pts[0][2]/pts[0][3],pts[1][2]/pts[1][3],pts[2][2]/pts[2][3]}.product(bc_clip);
 			
 			if (bc_screen.x() < 0 || bc_screen.y() < 0 || bc_screen.z() < 0 ||
-				zbuffer[P.x()+P.y()*image.get_width()]> frag_depth)
+				zbuffer[Px+Py*image.get_width()]> frag_depth)
 				continue;
 			bool discard = shader.fragment(bc_clip,color);
 			if (!discard)
 			{
-                zbuffer[P.x()+P.y()*image.get_width()] = frag_depth;
-				image.set(P.x(), P.y(), color);
+                zbuffer[Px+Py*image.get_width()] = frag_depth;
+				image.set(Px, Py, color);
 			}
 		}
 	}
