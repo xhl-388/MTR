@@ -22,6 +22,7 @@ Vec3f center{0,0,0};
 Vec3f up{0,1,0};
 
 struct GouraudShader : public IShader{
+	TGAImage* ao_tex;
 	Mat<float,2,3> varying_uv; 
 	Mat<float,4,3> varying_tri; // clip space triangle vertex coordinates
 	Mat<float,3,3> ndc_tri;		// triangle vertices' NDC coordinates
@@ -70,7 +71,8 @@ struct GouraudShader : public IShader{
 		float diffuse = std::max(0.f,n.product(l));
 		TGAColor c = model->diffuse(uv);
         color = c;
-        for (int i=0; i<3; i++) color[i] = std::min<float>(20 + c[i]*shadow*(1.2*diffuse + .6*spec), 255);
+		TGAColor ambient = ao_tex->get(uv.x()*width,uv.y()*height);
+        for (int i=0; i<3; i++) color[i] = std::min<float>(c[i]*shadow*(1.2*diffuse + .6*spec+ ambient[i]/255.f*0.3), 255);
         return false;
     }
 };
@@ -206,6 +208,7 @@ int main(int argc, char **argv)
 		shader.uniform_M=Projection*ModelView;
 		shader.uniform_MIT=shader.uniform_M.inverse().transpose();
 		shader.uniform_Mshadow = M*(shader.uniform_M.inverse());
+		shader.ao_tex = &frame;
 		for (int i = 0; i < model->nfaces(); i++)
 		{
 			for (int j = 0; j < 3; j++){
@@ -215,7 +218,7 @@ int main(int argc, char **argv)
 		}
 
 		image.flip_vertically();
-		image.write_tga_file("output.tga");
+		image.write_tga_file("output1.tga");
 	}
 	std::cout<<"Reach the end!"<<std::endl;
 
