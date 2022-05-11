@@ -1,6 +1,2 @@
-*.o
-/*.tga
-main
 /.vscode
-/build/*
-!/build/Makefile
+/build
