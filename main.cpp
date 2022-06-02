@@ -2,11 +2,8 @@
 #include <cmath>
 #include <limits>
 #include <iostream>
-#include "tgaimage.h"
-#include "model.h"
-#include "geometry.h"
-#include "trans.h"
-#include "show.h"
+#include <api.h>
+#include <show.h>
 
 Model *model = NULL;
 float* zbuffer;

@@ -1,5 +1,4 @@
-#ifndef __GEOMETRY_H__
-#define __GEOMETRY_H__
+#pragma once
 
 #include <cmath>
 #include <iostream>
@@ -591,5 +590,3 @@ T& Mat<T,R,C>::w() {
 	static_assert(C==1&&R>3);
 	return data[3];
 }
-
-#endif

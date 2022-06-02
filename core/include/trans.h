@@ -1,20 +1,15 @@
 #ifndef __TRANS_H__
 #define __TRANS_H__
 
-#include "geometry.h"
-#include "tgaimage.h"
 #include <limits>
 #include <omp.h>
+#include <ishader.h>
+#include <matrix.h>
 
 extern Mat4x4f Viewport;
 extern Mat4x4f Projection;
 extern Mat4x4f ModelView;
 
-struct IShader {
-    virtual ~IShader();
-    virtual Vec4f vertex(int iface, int nthvert) = 0;
-    virtual bool fragment(Vec3f bar, TGAColor &color) = 0;
-};
 
 Mat4x4f viewport(int x,int y,int w,int h,int depth);
 

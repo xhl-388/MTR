@@ -1,9 +1,8 @@
-#ifndef __MODEL_H__
-#define __MODEL_H__
+#pragma once
 
 #include <vector>
-#include "tgaimage.h"
-#include "geometry.h"
+#include <tgaimage.h>
+#include <matrix.h>
 
 class Model {
 private:
@@ -28,5 +27,3 @@ public:
 	std::vector<int> face(int idx) const;
 	void load_texture(std::string filename, const char *suffix, TGAImage &img);
 };
-
-#endif //__MODEL_H__
