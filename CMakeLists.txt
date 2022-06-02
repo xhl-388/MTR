@@ -13,3 +13,4 @@ add_executable(mtr ${mtr_sources})
 
 find_package(OpenMP REQUIRED)
 target_link_libraries(mtr PUBLIC OpenMP::OpenMP_CXX)
+target_link_libraries(mtr PRIVATE m X11)

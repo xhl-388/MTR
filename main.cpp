@@ -6,6 +6,7 @@
 #include "model.h"
 #include "geometry.h"
 #include "trans.h"
+#include "show.h"
 
 Model *model = NULL;
 float* zbuffer;
