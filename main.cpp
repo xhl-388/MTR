@@ -225,6 +225,34 @@ int main(int argc, char **argv)
 	}
 	std::cout<<"Reach the end!"<<std::endl;
 
+	image.flip_vertically();
+	
+	window_t* win = window_create("Render test", width, height);
+
+	image_t * targetImg = image_create(width, height, 3);
+	targetImg->buffer = image.buffer();
+	while(!window_should_close(win)) {
+
+		// ModelView = lookat(camera,center,up);
+		// Projection = projection(-1.f/(camera-center).norm());
+		// Viewport   = viewport(0, 0, width, height,depth);
+
+		// GouraudShader shader;
+		// shader.uniform_M=Projection*ModelView;
+		// shader.uniform_MIT=shader.uniform_M.inverse().transpose();
+		// shader.uniform_Mshadow = M*(shader.uniform_M.inverse());
+		// shader.ao_tex = &frame;
+		// for (int i = 0; i < model->nfaces(); i++)
+		// {
+		// 	for (int j = 0; j < 3; j++){
+		// 		shader.vertex(i,j);
+		// 	}
+		// 	triangle(shader.varying_tri, image, shader, zbuffer);
+		// }
+		window_draw_image(win, targetImg);
+	}
+
+
 	delete model;
 	return 0;
 }
