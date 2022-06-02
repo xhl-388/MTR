@@ -8,8 +8,9 @@ endif()
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB mtr_sources *.cpp *.h)
+file(GLOB mtr_sources main.cpp core/src/*.cpp core/include/*.h platform/src/*.cpp platform/include/*.h)
 add_executable(mtr ${mtr_sources})
+target_include_directories(mtr PUBLIC core/include platform/include)
 
 find_package(OpenMP REQUIRED)
 target_link_libraries(mtr PUBLIC OpenMP::OpenMP_CXX)
