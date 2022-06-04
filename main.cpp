@@ -5,12 +5,13 @@
 #include <api.h>
 #include <show.h>
 #include <utils.h>
+#include <chrono>
 
 Model *model = NULL;
 float* zbuffer;
 float* shadowbuffer;
 
-constexpr int depth=255;
+constexpr int depth = 255;
 constexpr int width = 1000;
 constexpr int height = 1000;
 
@@ -128,7 +129,8 @@ float max_elevation_angle(float *buffer, Vec2f p, Vec2f dir) {
 
 void key_callback(window_t *window, keycode_t key, int pressed) {
 	if(key == KEY_SPACE && pressed == 1) {
-        window->should_close = true;
+        // window->should_close = true;
+		std::cout << "SPACE pressed" << std::endl;
     }
 }
 
@@ -252,8 +254,12 @@ int main(int argc, char **argv)
 	callbacks.key_callback = key_callback;
 	callbacks.scroll_callback = nullptr;
 	input_set_callbacks(win, callbacks);
+	
+	auto startTime = std::chrono::steady_clock().now();
+
 	while(!window_should_close(win)) {
 
+		startTime = std::chrono::steady_clock().now();
 		// ModelView = lookat(camera,center,up);
 		// Projection = projection(-1.f/(camera-center).norm());
 		// Viewport   = viewport(0, 0, width, height,depth);
@@ -271,8 +277,12 @@ int main(int argc, char **argv)
 		// 	triangle(shader.varying_tri, image, shader, zbuffer);
 		// }
 		window_draw_image(win, targetImg);
-		test_show_keys_input(win);
+		// test_show_keys_input(win);
 		input_poll_events();
+		
+		auto deltaTime = std::chrono::steady_clock().now() - startTime;
+		std::cout << "Delta Time: " << 
+			std::chrono::duration_cast<std::chrono::milliseconds>(deltaTime).count() << std::endl;
 	}
 
 	window_destroy(win);
