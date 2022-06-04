@@ -126,6 +126,21 @@ float max_elevation_angle(float *buffer, Vec2f p, Vec2f dir) {
     return maxangle;
 }
 
+void key_callback(window_t *window, keycode_t key, int pressed) {
+	if(key == KEY_SPACE && pressed == 1) {
+        window->should_close = true;
+    }
+}
+
+void test_show_keys_input(window_t* window) {
+	printf("%d %d %d %d %d \n",window->keys[0],
+        window->keys[1],
+        window->keys[2],
+        window->keys[3],
+        window->keys[4]
+    );
+}
+
 int main(int argc, char **argv)
 {
 	// prepare data
@@ -232,6 +247,11 @@ int main(int argc, char **argv)
 
 	image_t * targetImg = image_create(width, height, 3);
 	targetImg->buffer = image.buffer();
+	callbacks_t callbacks;
+	callbacks.button_callback = nullptr;
+	callbacks.key_callback = key_callback;
+	callbacks.scroll_callback = nullptr;
+	input_set_callbacks(win, callbacks);
 	while(!window_should_close(win)) {
 
 		// ModelView = lookat(camera,center,up);
@@ -251,8 +271,11 @@ int main(int argc, char **argv)
 		// 	triangle(shader.varying_tri, image, shader, zbuffer);
 		// }
 		window_draw_image(win, targetImg);
+		test_show_keys_input(win);
+		input_poll_events();
 	}
 
+	window_destroy(win);
 
 	delete model;
 	return 0;
