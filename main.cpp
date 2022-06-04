@@ -4,6 +4,7 @@
 #include <iostream>
 #include <api.h>
 #include <show.h>
+#include <utils.h>
 
 Model *model = NULL;
 float* zbuffer;
@@ -137,10 +138,13 @@ int main(int argc, char **argv)
 	shadowbuffer = new float[width*height];
 	std::fill(shadowbuffer,shadowbuffer+width*height,-std::numeric_limits<float>::max());
 
-	if (2 == argc){
+	const char* outputDir;
+	if (3 == argc){
 		model = new Model(argv[1]);
+		outputDir = argv[2];
 	}else{
-		model = new Model("../obj/diablo3_pose.obj");
+		std::cerr << "Function main(): 3 args expected, " << argc <<" args provided !" << std::endl;
+		exit(-1);
 	}
 
 	// first pass : shadow pass
@@ -159,7 +163,7 @@ int main(int argc, char **argv)
 			triangle(depthShader.varying_tri, depthImg, depthShader, shadowbuffer);
 		}
 		depthImg.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-		depthImg.write_tga_file("depth.tga");
+		depthImg.write_tga_file(FileNameConcat(outputDir, "depth.tga"));
 	}
 
 	{
@@ -192,7 +196,7 @@ int main(int argc, char **argv)
 			}
 		}
 		frame.flip_vertically();
-		frame.write_tga_file("framebuffer.tga");
+		frame.write_tga_file(FileNameConcat(outputDir, "framebuffer.tga"));
 		std::fill(zbuffer,zbuffer+width*height,-std::numeric_limits<float>::max());
 	}
 
@@ -218,7 +222,7 @@ int main(int argc, char **argv)
 		}
 
 		image.flip_vertically();
-		image.write_tga_file("output1.tga");
+		image.write_tga_file(FileNameConcat(outputDir, "output.tga"));
 	}
 	std::cout<<"Reach the end!"<<std::endl;
 
