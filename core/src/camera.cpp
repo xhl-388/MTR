@@ -11,3 +11,10 @@ void Camera::RefreshViewMatrix() {
 	Tr.set_col(3, Vec4f(Vec3f::zero() - m_lookpoint, 1));
    	m_viewMat = res*Tr;
 }
+
+void Camera::LookAt(const Vec3f& pos, const Vec3f& up, const Vec3f& lookpoint) {
+    m_pos = pos;
+    m_up = up;
+    m_lookpoint = lookpoint;
+    RefreshViewMatrix();
+}

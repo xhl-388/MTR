@@ -18,4 +18,21 @@ public:
             RefreshViewMatrix();
         }
 
+    Mat4x4f GetViewMatrix() const {
+        return m_viewMat;
+    }
+    void LookAt(const Vec3f& pos, const Vec3f& up, const Vec3f& lookpoint);
+
+    void SetPosition(Vec3f newPos) {
+        m_pos = newPos;
+        RefreshViewMatrix();
+    }
+
+    Vec3f GetPosition() const {
+        return m_pos;
+    }
+
+    Vec3f GetLookPoint() const {
+        return m_lookpoint;
+    }
 };
