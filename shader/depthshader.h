@@ -22,4 +22,8 @@ struct DepthShader : public IShader {
         color = TGAColor(255, 255, 255)*(p.z()/2+0.5f);
         return false;
     }
+
+    virtual ~DepthShader() {
+
+    }
 };

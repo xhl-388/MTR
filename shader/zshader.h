@@ -18,4 +18,8 @@ struct ZShader : public IShader {
         color = TGAColor(0, 0, 0);
         return false;
     }
+
+    virtual ~ZShader() {
+        
+    }
 };

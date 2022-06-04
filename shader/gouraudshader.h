@@ -58,4 +58,8 @@ struct GouraudShader : public IShader{
         for (int i=0; i<3; i++) color[i] = std::min<float>(c[i]*shadow*(1.2*diffuse + .6*spec+ ambient[i]/255.f*0.3), 255);
         return false;
     }
+
+	virtual ~GouraudShader() {
+		
+	}
 };
