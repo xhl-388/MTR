@@ -69,4 +69,14 @@ public:
     void Render();
 
     ~Scene();
+
+    void WriteBuffersIntoFiles();
+
+    unsigned char* GetScreenBufferData() {
+        return m_image.buffer();
+    }
+
+    Camera& GetCamera() {
+        return m_camera;
+    }
 };

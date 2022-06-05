@@ -26,6 +26,13 @@ Scene::~Scene() {
 }
 
 void Scene::Render() {
+	m_image.clear();
+	m_depthImg.clear();
+	m_frame.clear();
+	std::fill(m_zbuffer, m_zbuffer + m_WIDTH*m_HEIGHT, -std::numeric_limits<float>::max());
+	std::fill(m_shadowbuffer, m_shadowbuffer + m_WIDTH*m_HEIGHT,
+                -std::numeric_limits<float>::max());
+
     Vec3f cameraPos = m_camera.GetPosition();
     // first pass : shadow pass
 	{
@@ -42,8 +49,6 @@ void Scene::Render() {
 			}
 			triangle(depthShader.varying_tri, m_depthImg, depthShader, m_shadowbuffer);
 		}
-		m_depthImg.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-		m_depthImg.write_tga_file(FileNameConcat(m_outputDir, "depth.tga"));
 	}
 
 	{
@@ -75,8 +80,6 @@ void Scene::Render() {
 				m_frame.set(x, y, TGAColor(val,val,val));
 			}
 		}
-		m_frame.flip_vertically();
-		m_frame.write_tga_file(FileNameConcat(m_outputDir, "framebuffer.tga"));
 		std::fill(m_zbuffer,m_zbuffer+m_WIDTH*m_HEIGHT,-std::numeric_limits<float>::max());
 	}
 
@@ -97,9 +100,6 @@ void Scene::Render() {
 			}
 			triangle(shader.varying_tri, m_image, shader, m_zbuffer);
 		}
-
-		m_image.flip_vertically();
-		m_image.write_tga_file(FileNameConcat(m_outputDir, "output.tga"));
 	}
 }
 
@@ -167,4 +167,18 @@ void Scene::triangle(Mat<float,4,3>& clipc, TGAImage &image, IShader& shader, fl
 			}
 		}
 	}
+}
+
+void Scene::WriteBuffersIntoFiles() {
+	m_depthImg.flip_vertically();
+	m_depthImg.write_tga_file(FileNameConcat(m_outputDir, "depth.tga"));
+	m_depthImg.flip_vertically();
+
+	m_frame.flip_vertically();
+	m_frame.write_tga_file(FileNameConcat(m_outputDir, "framebuffer.tga"));
+	m_frame.flip_vertically();
+
+	m_image.flip_vertically();
+	m_image.write_tga_file(FileNameConcat(m_outputDir, "output.tga"));
+	m_image.flip_vertically();
 }
