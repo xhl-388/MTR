@@ -51,6 +51,12 @@ private:
 
     void triangle(Mat<float,4,3>& clipc, TGAImage &image, IShader& shader, float* zbuffer);
 
+    void ShadowPass();
+
+    void AOPass();
+
+    void RenderPass();
+
 public:
     Scene(const Camera& camera, float projection_coeff, Model* model, int depth, int width, 
         int height, const Vec2i& viewport_offset, const Light& light, const char* outputDir)

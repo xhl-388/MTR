@@ -26,6 +26,8 @@ Scene::~Scene() {
 }
 
 void Scene::Render() {
+	TICK(Render);
+	
 	m_image.clear();
 	m_depthImg.clear();
 	m_frame.clear();
@@ -34,73 +36,21 @@ void Scene::Render() {
                 -std::numeric_limits<float>::max());
 
     Vec3f cameraPos = m_camera.GetPosition();
+
     // first pass : shadow pass
-	{
-		m_camera.SetPosition(m_light.origin);
-		SetProjectionCoeff(0);
+	m_camera.SetPosition(m_light.origin);
+	SetProjectionCoeff(0);
+	ShadowPass();
 
-		DepthShader depthShader;
-        depthShader.scene = this;
-
-		for (int i = 0; i < m_model->nfaces(); i++)
-		{
-			for (int j = 0; j < 3; j++){
-				depthShader.vertex(i,j);
-			}
-			triangle(depthShader.varying_tri, m_depthImg, depthShader, m_shadowbuffer);
-		}
-	}
-
-	{
-		m_camera.SetPosition(cameraPos);
-		SetProjectionCoeff(-1.f/(cameraPos-m_camera.GetLookPoint()).norm());
-
-		ZShader zshader;
-        zshader.scene = this;
-		for (int i=0; i<m_model->nfaces(); i++) {
-			for (int j=0; j<3; j++) {
-				zshader.vertex(i, j);
-			}
-			triangle(zshader.varying_tri, m_frame, zshader, m_zbuffer);
-		}
-		
-		omp_set_num_threads(20);
-		#pragma omp parallel for
-		for (int x=0; x<m_WIDTH; x++) {
-			for (int y=0; y<m_HEIGHT; y++) {
-				if (m_zbuffer[x+y*m_WIDTH] < -1e5) continue;
-				float total = 0;
-				for (float a=0; a<M_PI*2-1e-4; a += M_PI/4) {
-					total += M_PI/2 - max_elevation_angle(m_zbuffer, Vec2f{x, y}, 
-						Vec2f{std::cos(a), std::sin(a)});
-				}
-				total /= (M_PI/2)*8;
-				total = std::pow(total, 100.f);
-				int val = std::min(255,int(total*255));
-				m_frame.set(x, y, TGAColor(val,val,val));
-			}
-		}
-		std::fill(m_zbuffer,m_zbuffer+m_WIDTH*m_HEIGHT,-std::numeric_limits<float>::max());
-	}
-
-	Mat4x4f M = m_viewportMat*m_proMat*m_camera.GetViewMatrix();
+	// Ambient Occulsion Pass
+	m_camera.SetPosition(cameraPos);
+	SetProjectionCoeff(-1.f/(cameraPos-m_camera.GetLookPoint()).norm());
+	//AOPass();
 
 	// second pass : render pass
-	{
-		GouraudShader shader;
-        shader.scene = this;
-		shader.uniform_M=m_proMat*m_camera.GetViewMatrix();
-		shader.uniform_MIT=shader.uniform_M.inverse().transpose();
-		shader.uniform_Mshadow = M*(shader.uniform_M.inverse());
-		shader.ao_tex = &m_frame;
-		for (int i = 0; i < m_model->nfaces(); i++)
-		{
-			for (int j = 0; j < 3; j++){
-				shader.vertex(i,j);
-			}
-			triangle(shader.varying_tri, m_image, shader, m_zbuffer);
-		}
-	}
+	RenderPass();
+
+	TOCK(Render);
 }
 
 float Scene::max_elevation_angle(float *buffer, Vec2f p, Vec2f dir) {
@@ -181,4 +131,63 @@ void Scene::WriteBuffersIntoFiles() {
 	m_image.flip_vertically();
 	m_image.write_tga_file(FileNameConcat(m_outputDir, "output.tga"));
 	m_image.flip_vertically();
+}
+
+void Scene::ShadowPass() {
+	DepthShader depthShader;
+	depthShader.scene = this;
+
+	for (int i = 0; i < m_model->nfaces(); i++)
+	{
+		for (int j = 0; j < 3; j++){
+			depthShader.vertex(i,j);
+		}
+		triangle(depthShader.varying_tri, m_depthImg, depthShader, m_shadowbuffer);
+	}
+}
+
+void Scene::AOPass() {
+	ZShader zshader;
+	zshader.scene = this;
+	for (int i=0; i<m_model->nfaces(); i++) {
+		for (int j=0; j<3; j++) {
+			zshader.vertex(i, j);
+		}
+		triangle(zshader.varying_tri, m_frame, zshader, m_zbuffer);
+	}
+	
+	omp_set_num_threads(20);
+	#pragma omp parallel for
+	for (int x=0; x<m_WIDTH; x++) {
+		for (int y=0; y<m_HEIGHT; y++) {
+			if (m_zbuffer[x+y*m_WIDTH] < -1e5) continue;
+			float total = 0;
+			for (float a=0; a<M_PI*2-1e-4; a += M_PI/4) {
+				total += M_PI/2 - max_elevation_angle(m_zbuffer, Vec2f{x, y}, 
+					Vec2f{std::cos(a), std::sin(a)});
+			}
+			total /= (M_PI/2)*8;
+			total = std::pow(total, 100.f);
+			int val = std::min(255,int(total*255));
+			m_frame.set(x, y, TGAColor(val,val,val));
+		}
+	}
+	std::fill(m_zbuffer,m_zbuffer+m_WIDTH*m_HEIGHT,-std::numeric_limits<float>::max());
+}
+
+void Scene::RenderPass() {
+	Mat4x4f M = m_viewportMat*m_proMat*m_camera.GetViewMatrix();
+	GouraudShader shader;
+	shader.scene = this;
+	shader.uniform_M=m_proMat*m_camera.GetViewMatrix();
+	shader.uniform_MIT=shader.uniform_M.inverse().transpose();
+	shader.uniform_Mshadow = M*(shader.uniform_M.inverse());
+	shader.ao_tex = &m_frame;
+	for (int i = 0; i < m_model->nfaces(); i++)
+	{
+		for (int j = 0; j < 3; j++){
+			shader.vertex(i,j);
+		}
+		triangle(shader.varying_tri, m_image, shader, m_zbuffer);
+	}
 }
