@@ -12,6 +12,7 @@ file(GLOB mtr_sources main.cpp core/src/*.cpp core/include/*.h platform/src/*.cp
     platform/include/*.h shader/*.h)
 add_executable(mtr ${mtr_sources})
 target_include_directories(mtr PUBLIC core/include platform/include shader)
+target_compile_options(mtr PRIVATE -ffast-math)
 
 find_package(OpenMP REQUIRED)
 target_link_libraries(mtr PUBLIC OpenMP::OpenMP_CXX)

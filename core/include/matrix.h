@@ -4,12 +4,13 @@
 #include <iostream>
 #include <sstream>
 #include <cassert>
+#include <cstring>
 
 template <typename T,int R, int C>
 class Mat
 {
 private:	
-    T* data;
+    T data[R*C];
 	enum{row=R,col=C,msize=R*C};
 public:
     Mat(T defVal=0);
@@ -23,8 +24,6 @@ public:
     template<int R1,int C1>
     explicit Mat(const Mat<T,R1,C1>& m, T defVal=0);
 	~Mat() { 
-        if(data)
-            delete[] data;
     }
 	template <typename T1>
 	Mat& operator=(const Mat<T1,R,C>& m);
@@ -286,7 +285,6 @@ template<typename T, int R, int C>
 Mat<T,R,C>::Mat(T defVal)
 {
 	static_assert(R>0&&C>0);
-	data=new T[R*C];
 	std::fill(data,data+msize,defVal);
 }
 
@@ -323,17 +321,14 @@ Mat<T,R,C>::Mat(const Mat<T1,R,C>& m):Mat()
 {
 	for(int idx=0;idx<msize;idx++)
 	{
-		data[idx]=m[idx/C][idx%C];
+		data[idx]=m.data[idx];
 	}
 }
 
 template<typename T, int R, int C>
 Mat<T,R,C>::Mat(const Mat<T,R,C>& m):Mat()
 {
-	for(int idx=0;idx<msize;idx++)
-	{
-		data[idx]=m.data[idx];
-	}
+	memcpy(data, m.data, sizeof(data));
 }
 
 template<typename T, int R, int C>
@@ -352,8 +347,7 @@ Mat<T,R,C>::Mat(const Mat<T,R1,C1>& m, T defVal):Mat(defVal)
 template<typename T, int R, int C>
 Mat<T,R,C>::Mat(Mat&& m)
 {
-	data=m.data;
-	m.data=nullptr;
+	memcpy(data, m.data, sizeof(data));
 }
 
 template <typename T, int R, int C>
@@ -372,10 +366,7 @@ Mat<T,R,C>& Mat<T,R,C>::operator=(const Mat<T,R,C>& m)
 {
 	if(this!=&m)
 	{
-		for(int idx=0;idx<msize;idx++)
-		{
-			data[idx]=m.data[idx];
-		}
+		memcpy(data, m.data, sizeof(data));
 	}
 	return *this;
 }
@@ -385,9 +376,7 @@ Mat<T,R,C>& Mat<T,R,C>::operator=(Mat&& m)
 {
 	if(this!=&m)
 	{
-		delete[] data;
-		data=m.data;
-		m.data=nullptr;
+		memcpy(data, m.data, sizeof(data));
 	}
 	return *this;
 }
